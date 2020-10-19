@@ -1,7 +1,8 @@
 from django.http import HttpResponse # <-- Won't need this once all the methods use render() instead of HttpResponse()
 from django.template import loader # <-- ¿Might not need this once all the methods use render() instead of HttpResponse()?
-from django.http import Http404 # for NEW detail view
-from django.shortcuts import render # for NEW index view
+# from django.http import Http404 # used this first to create 404 exceptions, but now we're using get_objeft_or_404()
+# from django.shortcuts import render # used for revised index view; getting rid of this bc I think it's baked into get_object_or_404, render below
+from django.shortcuts import get_object_or_404, render
 
 from .models import Question # for NEW index view
 
@@ -24,10 +25,11 @@ def index(request):
   return render(request, 'polls/index.html', context)
 
 def detail(request, question_id):
-  try:
-    question = Question.objects.get(pk=question_id)
-  except Question.DoesNotExist:
-    raise Http404("Question does not exist.")
+  question = get_object_or_404(Question, pk=question_id)
+  # try:            <<<   # the try & except here is all baked into the get_object_or_404 now
+  #   question = Question.objects.get(pk=question_id)
+  # except Question.DoesNotExist:
+  #   raise Http404("Question does not exist.")
   return render(request, 'polls/detail.html', {'question': question})
 
 def results(request, question_id):

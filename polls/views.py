@@ -1,5 +1,6 @@
 from django.http import HttpResponse # <-- Won't need this once all the methods use render() instead of HttpResponse()
 from django.template import loader # <-- ¿Might not need this once all the methods use render() instead of HttpResponse()?
+from django.http import Http404 # for NEW detail view
 from django.shortcuts import render # for NEW index view
 
 from .models import Question # for NEW index view
@@ -23,7 +24,11 @@ def index(request):
   return render(request, 'polls/index.html', context)
 
 def detail(request, question_id):
-  return HttpResponse("You're looking at question %s." % question_id)
+  try:
+    question = Question.objects.get(pk=question_id)
+  except Question.DoesNotExist:
+    raise Http404("Question does not exist.")
+  return render(request, 'polls/detail.html', {'question': question})
 
 def results(request, question_id):
   response = "You're looking at the results of question %s."

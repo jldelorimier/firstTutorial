@@ -1,43 +1,46 @@
-from django.http import HttpResponse # <-- Won't need this once all the methods use render() instead of HttpResponse()
-from django.http import HttpResponse, HttpResponseRedirect # <-- added this for vote view from part 4
-from django.template import loader # <-- ¿Might not need this once all the methods use render() instead of HttpResponse()?
-# from django.http import Http404 # used this first to create 404 exceptions, but now we're using get_object_or_404()
-# from django.shortcuts import render # used for revised index view; getting rid of this bc I think it's baked into get_object_or_404, render below
+from django.http import HttpResponseRedirect
 from django.shortcuts import get_object_or_404, render
-from django.urls import reverse # <-- added this for vote view from part 4
+from django.urls import reverse
+from django.views import generic
 
-from .models import Question # for NEW index view
-from .models import Choice, Question # <-- does this need to be in a separate line from the line before? or are these lines redundant? added this for vote view from part 4. 
+from .models import Choice, Question
+
+class IndexView(generic.ListView):
+  template_name = 'polls/index.html'
+  context_object_name = 'latest_question_list'
+
+  def get_queryset(self):
+    """Return the last five published questions."""  
+    return Question.objects.order_by('-pub_date')[:5]
 
 # OLD INDEX VIEW
+
 # def index(request):
 #   latest_question_list = Question.objects.order_by('-pub_date')[:5]
-#   template = loader.get_template('polls/index.html')
-#   context = {
-#       'latest_question_list': latest_question_list,
-#   }
-#   # output = ', '.join([q.question_text for q in latest_question_list])
-#   # return HttpResponse(output)
-#   return HttpResponse(template.render(context, request))
+#   context = {'latest_question_list': latest_question_list}
+#   return render(request, 'polls/index.html', context)
 
-# NEW INDEX VIEW
+class DetailView(generic.DetailView):
+  model = Question
+  template_name = 'polls/detail.html'
 
-def index(request):
-  latest_question_list = Question.objects.order_by('-pub_date')[:5]
-  context = {'latest_question_list': latest_question_list}
-  return render(request, 'polls/index.html', context)
+# OLD DETAIL VIEW
 
-def detail(request, question_id):
-  question = get_object_or_404(Question, pk=question_id)
-  # try:            <<<   # the try & except here is all baked into the get_object_or_404 now
-  #   question = Question.objects.get(pk=question_id)
-  # except Question.DoesNotExist:
-  #   raise Http404("Question does not exist.")
-  return render(request, 'polls/detail.html', {'question': question})
+# def detail(request, question_id):
+#   question = get_object_or_404(Question, pk=question_id)
+#   return render(request, 'polls/detail.html', {'question': question})
 
-def results(request, question_id):
-  question = get_object_or_404(Question, pk=question_id)
-  return render(request, 'polls/results.html', {'question': question})
+class ResultsView(generic.DetailView):
+  model = Question
+  template_name = 'polls/results.html'
+
+# OLD RESULTS VIEW
+
+# def results(request, question_id):
+#   question = get_object_or_404(Question, pk=question_id)
+#   return render(request, 'polls/results.html', {'question': question})
+
+# ¿SO THE VOTE FUNCTION DOESN'T CHANGE WITH GENERIC VIEWS? I GUESS MAYBE IT'S NOT GENERIC FOR THIS APP SINCE IT'S SPECIFICALLY ADDING INCREMENTING VOTES?
 
 def vote(request, question_id):
   question = get_object_or_404(Question, pk=question_id)
@@ -53,5 +56,3 @@ def vote(request, question_id):
     selected_choice.save()
     # Always return an HttpResponseRedirect after successfully dealing with POST data. This prevents data from being posted twice if a user hits the Back button.
   return HttpResponseRedirect(reverse('polls:results', args=(question.id,)))
-
-# Create your views here.
